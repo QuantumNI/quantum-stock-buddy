@@ -12,12 +12,15 @@ interface SearchAndFilterProps {
 const SearchAndFilter = ({ searchQuery, onSearchChange, selectedCategory, onCategoryChange }: SearchAndFilterProps) => {
   const categories = [
     { value: "all", label: "All Products" },
-    { value: "waterproofing", label: "Waterproofing & Matting" },
+    { value: "adhesives", label: "Adhesives & Sealants" },
+    { value: "cutting", label: "Cutting Tools & Blades" },
     { value: "levelling", label: "Levelling Systems" },
     { value: "spacers", label: "Spacers & Accessories" },
-    { value: "cutting", label: "Cutting Tools & Blades" },
-    { value: "adhesives", label: "Adhesives & Sealants" },
+    { value: "waterproofing", label: "Waterproofing & Matting" },
+    { value: "cleaning", label: "Cleaning & Maintenance" },
+    { value: "tools", label: "Installation Tools" },
     { value: "installation", label: "Installation Accessories" },
+    { value: "heating", label: "Heating Systems" },
   ];
 
   return (

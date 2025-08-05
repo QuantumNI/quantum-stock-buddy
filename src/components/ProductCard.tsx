@@ -30,13 +30,9 @@ const ProductCard = ({
   expectedDate 
 }: ProductCardProps) => {
   const getStatusColor = () => {
-    switch (stockStatus) {
-      case "high": return "bg-success";
-      case "medium": return "bg-warning";
-      case "low": return "bg-danger";
-      case "out": return "bg-muted-foreground";
-      default: return "bg-muted-foreground";
-    }
+    if (stockLevel >= 100) return "bg-success";
+    if (stockLevel >= 10) return "bg-warning";
+    return "bg-danger";
   };
 
   const getStatusText = () => {
@@ -84,19 +80,10 @@ const ProductCard = ({
         </div>
       </CardContent>
 
-      <CardFooter className="pt-0 flex gap-2">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="flex-1"
-          disabled={stockStatus === "out"}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add to Quote
-        </Button>
-        <Button variant="secondary" size="sm">
-          <FileText className="w-4 h-4" />
-        </Button>
+      <CardFooter className="pt-0">
+        <div className="w-full text-center text-xs text-muted-foreground">
+          For orders: 028 9073 8989
+        </div>
       </CardFooter>
     </Card>
   );

@@ -18,9 +18,9 @@ All colors MUST be HSL.
     --popover-foreground: 222.2 84% 4.9%;
 
     /* Quantum Group NI Purple Branding - Updated to match main website */
-    --primary: 282 85% 45%; /* Deep purple matching Quantum brand */
+    --primary: 287 100% 50%; /* Vibrant purple matching Quantum brand */
     --primary-foreground: 0 0% 100%;
-    --primary-variant: 287 88% 55%; /* Lighter variant of brand purple */
+    --primary-variant: 292 100% 60%; /* Lighter variant of brand purple */
 
     --secondary: 240 5% 96%;
     --secondary-foreground: 262 82% 57%;

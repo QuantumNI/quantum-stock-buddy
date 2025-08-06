@@ -26,14 +26,21 @@ const ProductTable = ({ products }: ProductTableProps) => {
   };
 
   const getStatusText = (stockLevel: number, unit: string) => {
-    return `${stockLevel.toLocaleString()} ${unit}`;
+    const formatted = stockLevel.toLocaleString();
+    if (stockLevel >= 100) return `${formatted} ${unit}`;
+    if (stockLevel >= 10) return `${formatted} ${unit}`;
+    return `${formatted} left`;
+  };
+
+  const getStockWarning = (stockLevel: number) => {
+    return stockLevel < 10 ? "Low Stock" : null;
   };
 
   return (
     <div className="bg-card rounded-lg shadow-card overflow-hidden">
       <Table>
         <TableHeader>
-          <TableRow className="bg-muted/50">
+          <TableRow className="bg-muted/50 hover:bg-muted/50">
             <TableHead className="font-semibold text-foreground">Product Name</TableHead>
             <TableHead className="font-semibold text-foreground">Code</TableHead>
             <TableHead className="font-semibold text-foreground">Stock Level</TableHead>
@@ -42,19 +49,34 @@ const ProductTable = ({ products }: ProductTableProps) => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {products.map((product) => (
-            <TableRow key={product.id} className="hover:bg-muted/30 transition-colors">
+          {products.map((product, index) => (
+            <TableRow 
+              key={product.id} 
+              className={`hover:bg-muted/30 transition-colors ${
+                index % 2 === 0 ? 'bg-background' : 'bg-muted/10'
+              }`}
+            >
               <TableCell className="font-medium">
                 <div className="flex flex-col">
                   <span className="text-foreground">{product.name}</span>
-                  {product.badge && (
-                    <Badge 
-                      variant="secondary" 
-                      className="text-xs mt-1 w-fit bg-primary/10 text-primary"
-                    >
-                      {product.badge}
-                    </Badge>
-                  )}
+                  <div className="flex items-center gap-2 mt-1">
+                    {product.badge && (
+                      <Badge 
+                        variant="secondary" 
+                        className="text-xs bg-primary/10 text-primary"
+                      >
+                        {product.badge}
+                      </Badge>
+                    )}
+                    {getStockWarning(product.stockLevel) && (
+                      <Badge 
+                        variant="destructive" 
+                        className="text-xs bg-red-100 text-red-700"
+                      >
+                        {getStockWarning(product.stockLevel)}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </TableCell>
               <TableCell>
@@ -71,7 +93,10 @@ const ProductTable = ({ products }: ProductTableProps) => {
                 </div>
               </TableCell>
               <TableCell>
-                <span className="font-semibold text-primary">£{product.price.toFixed(2)}</span>
+                <div className="flex flex-col">
+                  <span className="font-semibold text-primary">£{product.price.toFixed(2)}</span>
+                  <span className="text-xs text-muted-foreground">+ VAT</span>
+                </div>
               </TableCell>
               <TableCell>
                 <Badge variant="outline" className="text-sm">

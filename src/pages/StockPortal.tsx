@@ -11,9 +11,12 @@ import diamondBlade from "@/assets/diamond-blade.jpg";
 import waterproofingKit from "@/assets/waterproofing-kit.jpg";
 import tileAdhesive from "@/assets/tile-adhesive.jpg";
 
+import { useIntelligentSearch } from "@/hooks/useIntelligentSearch";
+
 const StockPortal = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedBrand, setSelectedBrand] = useState("all");
 
   const products = [
     {
@@ -668,15 +671,16 @@ const StockPortal = () => {
     }
   ];
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         product.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         product.brand.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
-    
-    return matchesSearch && matchesCategory;
-  });
+  const {
+    intelligentSearch,
+    getAutoCompleteSuggestions,
+    getBrandCounts,
+    recentSearches,
+  } = useIntelligentSearch(products);
+
+  const searchResults = intelligentSearch(searchQuery, selectedCategory, selectedBrand);
+  const suggestions = getAutoCompleteSuggestions(searchQuery);
+  const brandCounts = getBrandCounts();
 
   return (
     <div className="min-h-screen bg-background">
@@ -688,7 +692,14 @@ const StockPortal = () => {
           onSearchChange={setSearchQuery}
           selectedCategory={selectedCategory}
           onCategoryChange={setSelectedCategory}
+          selectedBrand={selectedBrand}
+          onBrandChange={setSelectedBrand}
           products={products}
+          suggestions={suggestions}
+          recentSearches={recentSearches}
+          brandCounts={brandCounts}
+          resultCount={searchResults.resultCount}
+          didYouMean={searchResults.didYouMean}
         />
         
         <div className="mb-6 bg-gradient-card p-4 rounded-lg shadow-card">
@@ -700,9 +711,9 @@ const StockPortal = () => {
           </p>
         </div>
         
-        <ProductTable products={filteredProducts} />
+        <ProductTable products={searchResults.results} />
         
-        {filteredProducts.length === 0 && (
+        {searchResults.results.length === 0 && (
           <div className="text-center py-12">
             <p className="text-lg text-muted-foreground">
               No products found matching your criteria.

@@ -2,14 +2,33 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+interface Product {
+  id: string;
+  name: string;
+  code: string;
+  brand: string;
+  stockLevel: number;
+  stockStatus: "high" | "medium" | "low" | "out";
+  price: number;
+  unit: string;
+  badge?: string;
+  category: string;
+}
+
 interface SearchAndFilterProps {
   searchQuery: string;
   onSearchChange: (value: string) => void;
   selectedCategory: string;
   onCategoryChange: (value: string) => void;
+  products: Product[];
 }
 
-const SearchAndFilter = ({ searchQuery, onSearchChange, selectedCategory, onCategoryChange }: SearchAndFilterProps) => {
+const SearchAndFilter = ({ searchQuery, onSearchChange, selectedCategory, onCategoryChange, products }: SearchAndFilterProps) => {
+  const getCategoryCount = (categoryValue: string) => {
+    if (categoryValue === "all") return products.length;
+    return products.filter(product => product.category === categoryValue).length;
+  };
+
   const categories = [
     { value: "all", label: "All Products" },
     { value: "adhesives", label: "Adhesives & Sealants" },
@@ -44,7 +63,7 @@ const SearchAndFilter = ({ searchQuery, onSearchChange, selectedCategory, onCate
             <SelectContent>
               {categories.map((category) => (
                 <SelectItem key={category.value} value={category.value}>
-                  {category.label}
+                  {category.label} ({getCategoryCount(category.value)})
                 </SelectItem>
               ))}
             </SelectContent>

@@ -679,7 +679,7 @@ const StockPortal = () => {
   } = useIntelligentSearch(products);
 
   const [searchResults, setSearchResults] = useState<{
-    results: typeof products;
+    results: any[];
     didYouMean: string | null;
     resultCount: number;
     searchTerm: string;
@@ -687,6 +687,9 @@ const StockPortal = () => {
     intent: string;
     suggestions: string[];
     enhancedQuery: string;
+    exactMatches: any[];
+    relatedMatches: any[];
+    hasMore: boolean;
   }>({
     results: products,
     didYouMean: null,
@@ -695,7 +698,10 @@ const StockPortal = () => {
     aiEnhanced: false,
     intent: '',
     suggestions: [],
-    enhancedQuery: ''
+    enhancedQuery: '',
+    exactMatches: [],
+    relatedMatches: products,
+    hasMore: false
   });
 
   const handleSearch = async (query: string) => {
@@ -708,7 +714,10 @@ const StockPortal = () => {
       aiEnhanced: results.aiEnhanced || false,
       intent: results.intent || '',
       suggestions: results.suggestions || [],
-      enhancedQuery: results.enhancedQuery || query
+      enhancedQuery: results.enhancedQuery || query,
+      exactMatches: results.exactMatches || [],
+      relatedMatches: results.relatedMatches || [],
+      hasMore: results.hasMore || false
     });
   };
 
@@ -741,6 +750,7 @@ const StockPortal = () => {
           aiEnhanced={searchResults.aiEnhanced}
           intent={searchResults.intent}
           enhancedQuery={searchResults.enhancedQuery}
+          exactMatches={searchResults.exactMatches?.length || 0}
         />
         
         <div className="mb-6 bg-gradient-card p-4 rounded-lg shadow-card">
@@ -752,7 +762,15 @@ const StockPortal = () => {
           </p>
         </div>
         
-        <ProductTable products={searchResults.results} />
+        <ProductTable 
+          products={searchResults.results} 
+          exactMatches={searchResults.exactMatches}
+          hasMore={searchResults.hasMore}
+          onShowMore={() => {
+            // Show more results functionality could be added here
+            console.log('Show more results...');
+          }}
+        />
         
         {searchResults.results.length === 0 && (
           <div className="text-center py-12">

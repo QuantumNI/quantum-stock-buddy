@@ -12,13 +12,17 @@ interface Product {
   unit: string;
   badge?: string;
   category: string;
+  matchType?: 'exact-name' | 'exact-code' | 'partial' | 'related';
 }
 
 interface ProductTableProps {
   products: Product[];
+  exactMatches?: Product[];
+  hasMore?: boolean;
+  onShowMore?: () => void;
 }
 
-const ProductTable = ({ products }: ProductTableProps) => {
+const ProductTable = ({ products, exactMatches = [], hasMore = false, onShowMore }: ProductTableProps) => {
   const getStatusColor = (stockLevel: number) => {
     if (stockLevel >= 100) return "bg-green-500";
     if (stockLevel >= 10) return "bg-yellow-500";
@@ -60,6 +64,14 @@ const ProductTable = ({ products }: ProductTableProps) => {
                 <div className="flex flex-col">
                   <span className="text-foreground">{product.name}</span>
                   <div className="flex items-center gap-2 mt-1">
+                    {(product.matchType === 'exact-name' || product.matchType === 'exact-code') && (
+                      <Badge 
+                        variant="default" 
+                        className="text-xs bg-green-100 text-green-800 border-green-200"
+                      >
+                        EXACT MATCH
+                      </Badge>
+                    )}
                     {product.badge && (
                       <Badge 
                         variant="secondary" 
@@ -107,6 +119,16 @@ const ProductTable = ({ products }: ProductTableProps) => {
           ))}
         </TableBody>
       </Table>
+      {hasMore && onShowMore && (
+        <div className="p-4 text-center border-t">
+          <button
+            onClick={onShowMore}
+            className="text-primary hover:text-primary/80 font-medium text-sm"
+          >
+            Show more results...
+          </button>
+        </div>
+      )}
     </div>
   );
 };

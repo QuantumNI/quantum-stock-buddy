@@ -14,6 +14,7 @@ interface Product {
   unit: string;
   badge?: string;
   category: string;
+  matchType?: 'exact-name' | 'exact-code' | 'partial' | 'related';
 }
 
 interface AISearchResult {
@@ -23,6 +24,20 @@ interface AISearchResult {
   intent: string;
   category: string;
   originalQuery: string;
+}
+
+interface SearchResult {
+  results: Product[];
+  didYouMean: string | null;
+  resultCount: number;
+  searchTerm: string;
+  aiEnhanced: boolean;
+  intent: string;
+  suggestions: string[];
+  enhancedQuery?: string;
+  exactMatches: Product[];
+  relatedMatches: Product[];
+  hasMore: boolean;
 }
 
 // Synonym mapping for contractor-friendly search
@@ -123,6 +138,46 @@ export const useIntelligentSearch = (products: Product[]) => {
     return expandedQuery;
   };
 
+  const prioritizeResults = (searchResults: Product[], query: string) => {
+    const trimmedQuery = query.trim().toLowerCase();
+    const exactNameMatches: Product[] = [];
+    const exactCodeMatches: Product[] = [];
+    const partialMatches: Product[] = [];
+    const relatedMatches: Product[] = [];
+
+    searchResults.forEach(product => {
+      if (product.name.toLowerCase() === trimmedQuery) {
+        exactNameMatches.push({ ...product, matchType: 'exact-name' });
+      } else if (product.code.toLowerCase() === trimmedQuery) {
+        exactCodeMatches.push({ ...product, matchType: 'exact-code' });
+      } else if (
+        product.name.toLowerCase().includes(trimmedQuery) ||
+        product.code.toLowerCase().includes(trimmedQuery)
+      ) {
+        partialMatches.push({ ...product, matchType: 'partial' });
+      } else {
+        relatedMatches.push({ ...product, matchType: 'related' });
+      }
+    });
+
+    // Combine in priority order
+    const prioritized = [...exactNameMatches, ...exactCodeMatches, ...partialMatches, ...relatedMatches];
+    const exactMatches = [...exactNameMatches, ...exactCodeMatches];
+    
+    // Limit to max 4 results for initial display
+    const maxResults = 4;
+    const displayResults = prioritized.slice(0, maxResults);
+    const hasMore = prioritized.length > maxResults;
+
+    return {
+      results: displayResults,
+      exactMatches,
+      relatedMatches: prioritized.slice(exactMatches.length),
+      hasMore,
+      allResults: prioritized
+    };
+  };
+
   const intelligentSearch = async (query: string, category: string = 'all', brand: string = 'all') => {
     if (!query.trim()) {
       let filtered = products;
@@ -143,6 +198,9 @@ export const useIntelligentSearch = (products: Product[]) => {
         aiEnhanced: false,
         intent: '',
         suggestions: [],
+        exactMatches: [],
+        relatedMatches: filtered,
+        hasMore: false,
       };
     }
 
@@ -172,20 +230,26 @@ export const useIntelligentSearch = (products: Product[]) => {
         aiResults = aiResults.filter((product: Product) => product.brand === brand);
       }
 
+      // Prioritize AI results
+      const prioritizedAI = prioritizeResults(aiResults, query);
+
       // Add to recent searches
       if (query.trim() && !recentSearches.includes(query.trim())) {
         setRecentSearches(prev => [query.trim(), ...prev].slice(0, 5));
       }
 
       return {
-        results: aiResults,
+        results: prioritizedAI.results,
         didYouMean: null,
-        resultCount: aiResults.length,
+        resultCount: prioritizedAI.allResults.length,
         searchTerm: query,
         aiEnhanced: true,
         intent: data.intent || '',
         suggestions: data.suggestions || [],
         enhancedQuery: data.enhancedQuery || query,
+        exactMatches: prioritizedAI.exactMatches,
+        relatedMatches: prioritizedAI.relatedMatches,
+        hasMore: prioritizedAI.hasMore,
       };
 
     } catch (aiError) {
@@ -204,6 +268,9 @@ export const useIntelligentSearch = (products: Product[]) => {
       if (brand !== 'all') {
         filteredResults = filteredResults.filter(product => product.brand === brand);
       }
+
+      // Prioritize fuzzy search results
+      const prioritizedFuzzy = prioritizeResults(filteredResults, query);
 
       // Check for spell corrections
       let didYouMean = null;
@@ -224,13 +291,16 @@ export const useIntelligentSearch = (products: Product[]) => {
       }
 
       return {
-        results: filteredResults,
+        results: prioritizedFuzzy.results,
         didYouMean,
-        resultCount: filteredResults.length,
+        resultCount: prioritizedFuzzy.allResults.length,
         searchTerm: query,
         aiEnhanced: false,
         intent: '',
         suggestions: [],
+        exactMatches: prioritizedFuzzy.exactMatches,
+        relatedMatches: prioritizedFuzzy.relatedMatches,
+        hasMore: prioritizedFuzzy.hasMore,
       };
     }
   };

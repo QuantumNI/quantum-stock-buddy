@@ -34,6 +34,7 @@ interface SearchAndFilterProps {
   aiEnhanced?: boolean;
   intent?: string;
   enhancedQuery?: string;
+  exactMatches?: number;
 }
 
 const SearchAndFilter = ({ 
@@ -51,7 +52,8 @@ const SearchAndFilter = ({
   didYouMean,
   aiEnhanced = false,
   intent = '',
-  enhancedQuery = ''
+  enhancedQuery = '',
+  exactMatches = 0
 }: SearchAndFilterProps) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -231,7 +233,15 @@ const SearchAndFilter = ({
             <div>
               {searchQuery ? (
                 <span>
-                  Found {resultCount} products for '{searchQuery}'
+                  {exactMatches > 0 ? (
+                    <span>
+                      Found <span className="font-semibold text-green-600">{exactMatches} exact match{exactMatches > 1 ? 'es' : ''}</span>
+                      {resultCount > exactMatches && <span> and {resultCount - exactMatches} related product{resultCount - exactMatches > 1 ? 's' : ''}</span>}
+                      {' '}for '{searchQuery}'
+                    </span>
+                  ) : (
+                    <span>Found {resultCount} products for '{searchQuery}'</span>
+                  )}
                   {aiEnhanced && enhancedQuery !== searchQuery && (
                     <span className="text-primary"> (enhanced: "{enhancedQuery}")</span>
                   )}

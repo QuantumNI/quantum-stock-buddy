@@ -31,6 +31,9 @@ interface SearchAndFilterProps {
   brandCounts: [string, number][];
   resultCount: number;
   didYouMean: string | null;
+  aiEnhanced?: boolean;
+  intent?: string;
+  enhancedQuery?: string;
 }
 
 const SearchAndFilter = ({ 
@@ -45,7 +48,10 @@ const SearchAndFilter = ({
   recentSearches,
   brandCounts,
   resultCount,
-  didYouMean
+  didYouMean,
+  aiEnhanced = false,
+  intent = '',
+  enhancedQuery = ''
 }: SearchAndFilterProps) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -221,31 +227,47 @@ const SearchAndFilter = ({
 
         {/* Search Results Info */}
         <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <div>
-            {searchQuery ? (
-              <span>
-                Found {resultCount} products for '{searchQuery}'
-                {didYouMean && (
-                  <span className="ml-2">
-                    - Did you mean: 
-                    <button 
-                      onClick={() => onSearchChange(didYouMean)}
-                      className="text-primary hover:underline ml-1"
-                    >
-                      {didYouMean}
-                    </button>
-                    ?
-                  </span>
-                )}
-              </span>
-            ) : (
-              <span>Showing all {resultCount} products</span>
+          <div className="flex flex-col gap-1">
+            <div>
+              {searchQuery ? (
+                <span>
+                  Found {resultCount} products for '{searchQuery}'
+                  {aiEnhanced && enhancedQuery !== searchQuery && (
+                    <span className="text-primary"> (enhanced: "{enhancedQuery}")</span>
+                  )}
+                  {didYouMean && (
+                    <span className="ml-2">
+                      - Did you mean: 
+                      <button 
+                        onClick={() => onSearchChange(didYouMean)}
+                        className="text-primary hover:underline ml-1"
+                      >
+                        {didYouMean}
+                      </button>
+                      ?
+                    </span>
+                  )}
+                </span>
+              ) : (
+                <span>Showing all {resultCount} products</span>
+              )}
+            </div>
+            {intent && (
+              <div className="text-xs text-primary">
+                AI Intent: {intent}
+              </div>
             )}
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-xs">
-              AI-powered search
-            </Badge>
+            {aiEnhanced ? (
+              <Badge variant="default" className="text-xs bg-primary">
+                🤖 AI-Enhanced
+              </Badge>
+            ) : (
+              <Badge variant="secondary" className="text-xs">
+                AI-powered search
+              </Badge>
+            )}
             <span>Last synced: 2 minutes ago</span>
           </div>
         </div>

@@ -1,17 +1,28 @@
 import { useMemo, useState } from 'react';
 import Fuse from 'fuse.js';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Product {
   id: string;
   name: string;
   code: string;
   brand: string;
+  image: string;
   stockLevel: number;
   stockStatus: "high" | "medium" | "low" | "out";
   price: number;
   unit: string;
   badge?: string;
   category: string;
+}
+
+interface AISearchResult {
+  enhancedQuery: string;
+  matchedProducts: Product[];
+  suggestions: string[];
+  intent: string;
+  category: string;
+  originalQuery: string;
 }
 
 // Synonym mapping for contractor-friendly search
@@ -112,7 +123,7 @@ export const useIntelligentSearch = (products: Product[]) => {
     return expandedQuery;
   };
 
-  const intelligentSearch = (query: string, category: string = 'all', brand: string = 'all') => {
+  const intelligentSearch = async (query: string, category: string = 'all', brand: string = 'all') => {
     if (!query.trim()) {
       let filtered = products;
       
@@ -129,51 +140,99 @@ export const useIntelligentSearch = (products: Product[]) => {
         didYouMean: null,
         resultCount: filtered.length,
         searchTerm: '',
+        aiEnhanced: false,
+        intent: '',
+        suggestions: [],
       };
     }
 
-    // Expand query with synonyms and corrections
-    const expandedQuery = expandQuery(query);
-    
-    // Perform fuzzy search
-    const searchResults = fuse.search(expandedQuery);
-    
-    // Filter by category and brand
-    let filteredResults = searchResults.map(result => result.item);
-    
-    if (category !== 'all') {
-      filteredResults = filteredResults.filter(product => product.category === category);
-    }
-    
-    if (brand !== 'all') {
-      filteredResults = filteredResults.filter(product => product.brand === brand);
-    }
+    try {
+      // First try AI-powered search
+      console.log('Making AI search request for:', query);
+      
+      const { data, error } = await supabase.functions.invoke('ai-search', {
+        body: { query, products }
+      });
 
-    // Check for spell corrections
-    let didYouMean = null;
-    const originalQuery = query.toLowerCase();
-    const correctedQuery = expandQuery(originalQuery);
-    if (originalQuery !== correctedQuery && filteredResults.length === 0) {
-      // Try search with just the corrected terms
-      const correctedResults = fuse.search(correctedQuery);
-      if (correctedResults.length > 0) {
-        didYouMean = Object.entries(spellCorrections).find(([wrong]) => 
-          originalQuery.includes(wrong)
-        )?.[1] || 'levelling';
+      if (error) {
+        console.error('AI search error:', error);
+        throw error;
       }
-    }
 
-    // Add to recent searches
-    if (query.trim() && !recentSearches.includes(query.trim())) {
-      setRecentSearches(prev => [query.trim(), ...prev].slice(0, 5));
-    }
+      console.log('AI search response:', data);
 
-    return {
-      results: filteredResults,
-      didYouMean,
-      resultCount: filteredResults.length,
-      searchTerm: query,
-    };
+      let aiResults = data.matchedProducts || [];
+      
+      // Apply category and brand filters to AI results
+      if (category !== 'all') {
+        aiResults = aiResults.filter((product: Product) => product.category === category);
+      }
+      
+      if (brand !== 'all') {
+        aiResults = aiResults.filter((product: Product) => product.brand === brand);
+      }
+
+      // Add to recent searches
+      if (query.trim() && !recentSearches.includes(query.trim())) {
+        setRecentSearches(prev => [query.trim(), ...prev].slice(0, 5));
+      }
+
+      return {
+        results: aiResults,
+        didYouMean: null,
+        resultCount: aiResults.length,
+        searchTerm: query,
+        aiEnhanced: true,
+        intent: data.intent || '',
+        suggestions: data.suggestions || [],
+        enhancedQuery: data.enhancedQuery || query,
+      };
+
+    } catch (aiError) {
+      console.warn('AI search failed, falling back to fuzzy search:', aiError);
+      
+      // Fallback to original fuzzy search
+      const expandedQuery = expandQuery(query);
+      const searchResults = fuse.search(expandedQuery);
+      
+      let filteredResults = searchResults.map(result => result.item);
+      
+      if (category !== 'all') {
+        filteredResults = filteredResults.filter(product => product.category === category);
+      }
+      
+      if (brand !== 'all') {
+        filteredResults = filteredResults.filter(product => product.brand === brand);
+      }
+
+      // Check for spell corrections
+      let didYouMean = null;
+      const originalQuery = query.toLowerCase();
+      const correctedQuery = expandQuery(originalQuery);
+      if (originalQuery !== correctedQuery && filteredResults.length === 0) {
+        const correctedResults = fuse.search(correctedQuery);
+        if (correctedResults.length > 0) {
+          didYouMean = Object.entries(spellCorrections).find(([wrong]) => 
+            originalQuery.includes(wrong)
+          )?.[1] || 'levelling';
+        }
+      }
+
+      // Add to recent searches
+      if (query.trim() && !recentSearches.includes(query.trim())) {
+        setRecentSearches(prev => [query.trim(), ...prev].slice(0, 5));
+      }
+
+      return {
+        results: filteredResults,
+        didYouMean,
+        resultCount: filteredResults.length,
+        searchTerm: query,
+        aiEnhanced: false,
+        intent: '',
+        suggestions: [],
+      };
+    }
   };
 
   const getAutoCompleteSuggestions = (query: string): string[] => {

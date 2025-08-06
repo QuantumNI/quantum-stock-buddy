@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import StockHeader from "@/components/StockHeader";
 import SearchAndFilter from "@/components/SearchAndFilter";
 import ProductTable from "@/components/ProductTable";
@@ -678,7 +678,45 @@ const StockPortal = () => {
     recentSearches,
   } = useIntelligentSearch(products);
 
-  const searchResults = intelligentSearch(searchQuery, selectedCategory, selectedBrand);
+  const [searchResults, setSearchResults] = useState<{
+    results: typeof products;
+    didYouMean: string | null;
+    resultCount: number;
+    searchTerm: string;
+    aiEnhanced: boolean;
+    intent: string;
+    suggestions: string[];
+    enhancedQuery: string;
+  }>({
+    results: products,
+    didYouMean: null,
+    resultCount: products.length,
+    searchTerm: '',
+    aiEnhanced: false,
+    intent: '',
+    suggestions: [],
+    enhancedQuery: ''
+  });
+
+  const handleSearch = async (query: string) => {
+    const results = await intelligentSearch(query, selectedCategory, selectedBrand);
+    setSearchResults({
+      results: results.results,
+      didYouMean: results.didYouMean,
+      resultCount: results.resultCount,
+      searchTerm: results.searchTerm,
+      aiEnhanced: results.aiEnhanced || false,
+      intent: results.intent || '',
+      suggestions: results.suggestions || [],
+      enhancedQuery: results.enhancedQuery || query
+    });
+  };
+
+  // Handle search when query, category, or brand changes
+  React.useEffect(() => {
+    handleSearch(searchQuery);
+  }, [searchQuery, selectedCategory, selectedBrand]);
+
   const suggestions = getAutoCompleteSuggestions(searchQuery);
   const brandCounts = getBrandCounts();
 
@@ -700,6 +738,9 @@ const StockPortal = () => {
           brandCounts={brandCounts}
           resultCount={searchResults.resultCount}
           didYouMean={searchResults.didYouMean}
+          aiEnhanced={searchResults.aiEnhanced}
+          intent={searchResults.intent}
+          enhancedQuery={searchResults.enhancedQuery}
         />
         
         <div className="mb-6 bg-gradient-card p-4 rounded-lg shadow-card">

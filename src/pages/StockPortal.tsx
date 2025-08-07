@@ -703,6 +703,7 @@ const StockPortal = () => {
     relatedMatches: products,
     hasMore: false
   });
+  const [showAllResults, setShowAllResults] = useState(false);
 
   const handleSearch = async (query: string) => {
     const results = await intelligentSearch(query, selectedCategory, selectedBrand);
@@ -719,6 +720,7 @@ const StockPortal = () => {
       relatedMatches: results.relatedMatches || [],
       hasMore: results.hasMore || false
     });
+    setShowAllResults(false); // Reset when new search is performed
   };
 
   // Handle search when query, category, or brand changes
@@ -751,6 +753,8 @@ const StockPortal = () => {
           intent={searchResults.intent}
           enhancedQuery={searchResults.enhancedQuery}
           exactMatches={searchResults.exactMatches?.length || 0}
+          hasMoreResults={searchResults.hasMore}
+          showAllResults={showAllResults}
         />
         
         <div className="mb-6 bg-gradient-card p-4 rounded-lg shadow-card">
@@ -763,13 +767,10 @@ const StockPortal = () => {
         </div>
         
         <ProductTable 
-          products={searchResults.results} 
+          products={showAllResults ? [...searchResults.exactMatches, ...searchResults.relatedMatches] : searchResults.results} 
           exactMatches={searchResults.exactMatches}
-          hasMore={searchResults.hasMore}
-          onShowMore={() => {
-            // Show more results functionality could be added here
-            console.log('Show more results...');
-          }}
+          hasMore={searchResults.hasMore && !showAllResults}
+          onShowMore={() => setShowAllResults(true)}
         />
         
         {searchResults.results.length === 0 && (

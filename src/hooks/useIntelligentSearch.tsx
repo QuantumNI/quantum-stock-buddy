@@ -160,19 +160,28 @@ export const useIntelligentSearch = (products: Product[]) => {
       }
     });
 
-    // Combine in priority order
-    const prioritized = [...exactNameMatches, ...exactCodeMatches, ...partialMatches, ...relatedMatches];
     const exactMatches = [...exactNameMatches, ...exactCodeMatches];
+    const allOtherMatches = [...partialMatches, ...relatedMatches];
+    const prioritized = [...exactMatches, ...allOtherMatches];
     
-    // Limit to max 4 results for initial display
-    const maxResults = 4;
-    const displayResults = prioritized.slice(0, maxResults);
-    const hasMore = prioritized.length > maxResults;
+    // If there are exact matches, show only those initially
+    let displayResults: Product[];
+    let hasMore: boolean;
+    
+    if (exactMatches.length > 0) {
+      displayResults = exactMatches;
+      hasMore = allOtherMatches.length > 0;
+    } else {
+      // No exact matches, show up to 4 results
+      const maxResults = 4;
+      displayResults = prioritized.slice(0, maxResults);
+      hasMore = prioritized.length > maxResults;
+    }
 
     return {
       results: displayResults,
       exactMatches,
-      relatedMatches: prioritized.slice(exactMatches.length),
+      relatedMatches: allOtherMatches,
       hasMore,
       allResults: prioritized
     };

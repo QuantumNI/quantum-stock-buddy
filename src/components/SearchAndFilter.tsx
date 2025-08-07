@@ -35,6 +35,8 @@ interface SearchAndFilterProps {
   intent?: string;
   enhancedQuery?: string;
   exactMatches?: number;
+  hasMoreResults?: boolean;
+  showAllResults?: boolean;
 }
 
 const SearchAndFilter = ({ 
@@ -53,7 +55,9 @@ const SearchAndFilter = ({
   aiEnhanced = false,
   intent = '',
   enhancedQuery = '',
-  exactMatches = 0
+  exactMatches = 0,
+  hasMoreResults = false,
+  showAllResults = false
 }: SearchAndFilterProps) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -235,8 +239,14 @@ const SearchAndFilter = ({
                 <span>
                   {exactMatches > 0 ? (
                     <span>
-                      Found <span className="font-semibold text-green-600">{exactMatches} exact match{exactMatches > 1 ? 'es' : ''}</span>
-                      {resultCount > exactMatches && <span> and {resultCount - exactMatches} related product{resultCount - exactMatches > 1 ? 's' : ''}</span>}
+                      {exactMatches === 1 ? (
+                        'Exact match found'
+                      ) : (
+                        `${exactMatches} exact matches found`
+                      )}
+                      {hasMoreResults && !showAllResults && (
+                        ` (${resultCount - exactMatches} more available)`
+                      )}
                       {' '}for '{searchQuery}'
                     </span>
                   ) : (

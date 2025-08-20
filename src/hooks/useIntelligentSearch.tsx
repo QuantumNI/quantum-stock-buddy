@@ -239,6 +239,12 @@ export const useIntelligentSearch = (products: Product[]) => {
         aiResults = aiResults.filter((product: Product) => product.brand === brand);
       }
 
+      // If AI found no results, fall back to fuzzy search
+      if (aiResults.length === 0) {
+        console.log('No AI results found, falling back to fuzzy search');
+        throw new Error('No AI results found, falling back to fuzzy search');
+      }
+
       // Prioritize AI results
       const prioritizedAI = prioritizeResults(aiResults, query);
 
